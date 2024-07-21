@@ -4,20 +4,20 @@ using Random = UnityEngine.Random;
 
 public class StageScript : MonoBehaviour
 {
-    [Header("Editor Objects")] [SerializeField]
-    private GameObject tilePrefab;
+    [Header("Editor Objects")]
+    [SerializeField] private GameObject tilePrefab;
+    [SerializeField] private GameObject ghostTilePrefab;
 
     [SerializeField] private Transform backgroundNode;
     [SerializeField] private Transform boardNode;
     [SerializeField] private Transform tetrominoNode;
+    private Transform ghostTetrominoNode;
 
-    [Header("Game Settings")] [SerializeField, Range(4, 40)]
-    private int boardWidth = 10;
-
+    [Header("Game Settings")]
+    [SerializeField, Range(4, 40)] private int boardWidth = 10;
     [SerializeField, Range(5, 20)] private int boardHeight = 20;
     [SerializeField] private float fallCycle = 1.0f;
 
-    // Properties to provide read-only access to the private fields if needed
     public GameObject TilePrefab => tilePrefab;
     public Transform BackgroundNode => backgroundNode;
     public Transform BoardNode => boardNode;
@@ -49,6 +49,7 @@ public class StageScript : MonoBehaviour
         }
 
         CreateTetromino();
+        CreateGhostTetromino();
     }
 
     void Update()
@@ -56,7 +57,6 @@ public class StageScript : MonoBehaviour
         Vector3 moveDir = Vector3.zero;
         bool isRotate = false;
 
-        // 조작
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             moveDir.x = -1;
@@ -77,9 +77,7 @@ public class StageScript : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.RightShift))
         {
-            while (MoveTetromino(Vector3.down, false))
-            {
-            }
+            while (MoveTetromino(Vector3.down, false)) { }
         }
 
         if (Time.time > nextFallTime)
@@ -93,6 +91,8 @@ public class StageScript : MonoBehaviour
         {
             MoveTetromino(moveDir, isRotate);
         }
+
+        UpdateGhostTetromino();
     }
 
     bool MoveTetromino(Vector3 moveDir, bool isRotate)
@@ -111,11 +111,12 @@ public class StageScript : MonoBehaviour
             tetrominoNode.transform.position = oldPos;
             tetrominoNode.transform.rotation = oldRot;
 
-            if ((int)moveDir.y == -1 && (int)moveDir.x == 0 && isRotate == false)
+            if ((int)moveDir.y == -1 && (int)moveDir.x == 0 && !isRotate)
             {
                 AddToBoard(tetrominoNode);
                 CheckBoardColumn();
                 CreateTetromino();
+                CreateGhostTetromino();
             }
 
             return false;
@@ -132,14 +133,11 @@ public class StageScript : MonoBehaviour
             int x = Mathf.RoundToInt(node.transform.position.x + halfWidth);
             int y = Mathf.RoundToInt(node.transform.position.y + halfHeight - 1);
 
-            if (x < 0 || x > boardWidth - 1) return false;
-            if (y < 0) return false;
+            if (x < 0 || x >= boardWidth || y < 0) return false;
 
             var column = boardNode.Find(y.ToString());
-
             if (column != null && column.Find(x.ToString()) != null) return false;
         }
-
         return true;
     }
 
@@ -147,7 +145,6 @@ public class StageScript : MonoBehaviour
     {
         Color color = Color.gray;
 
-        // 타일 보드
         color.a = 0.5f;
         for (int x = -halfWidth; x < halfWidth; ++x)
         {
@@ -157,7 +154,6 @@ public class StageScript : MonoBehaviour
             }
         }
 
-        // 좌우 테두리
         color.a = 1.0f;
         for (int y = halfHeight; y > -halfHeight; --y)
         {
@@ -165,7 +161,6 @@ public class StageScript : MonoBehaviour
             CreateTile(backgroundNode, new Vector2(halfWidth, y), color, 0);
         }
 
-        // 아래 테두리
         for (int x = -halfWidth - 1; x <= halfWidth; ++x)
         {
             CreateTile(backgroundNode, new Vector2(x, -halfHeight), color, 0);
@@ -195,7 +190,6 @@ public class StageScript : MonoBehaviour
 
         switch (index)
         {
-            // I : 하늘색
             case 0:
                 color = new Color32(115, 251, 253, 255);
                 CreateTile(tetrominoNode, new Vector2(-2f, 0.0f), color);
@@ -204,7 +198,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(1f, 0.0f), color);
                 break;
 
-            // J : 파란색
             case 1:
                 color = new Color32(0, 33, 245, 255);
                 CreateTile(tetrominoNode, new Vector2(-1f, 0.0f), color);
@@ -213,7 +206,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(-1f, 1.0f), color);
                 break;
 
-            // L : 귤색
             case 2:
                 color = new Color32(243, 168, 59, 255);
                 CreateTile(tetrominoNode, new Vector2(-1f, 0.0f), color);
@@ -222,7 +214,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(1f, 1.0f), color);
                 break;
 
-            // O : 노란색
             case 3:
                 color = new Color32(255, 253, 84, 255);
                 CreateTile(tetrominoNode, new Vector2(0f, 0f), color);
@@ -231,7 +222,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(1f, 1f), color);
                 break;
 
-            // S : 녹색
             case 4:
                 color = new Color32(117, 250, 76, 255);
                 CreateTile(tetrominoNode, new Vector2(-1f, -1f), color);
@@ -240,7 +230,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(1f, 0f), color);
                 break;
 
-            // T : 자주색
             case 5:
                 color = new Color32(155, 47, 246, 255);
                 CreateTile(tetrominoNode, new Vector2(-1f, 0f), color);
@@ -249,7 +238,6 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(0f, 1f), color);
                 break;
 
-            // Z : 빨간색
             case 6:
                 color = new Color32(235, 51, 35, 255);
                 CreateTile(tetrominoNode, new Vector2(-1f, 1f), color);
@@ -260,7 +248,48 @@ public class StageScript : MonoBehaviour
         }
     }
 
-    // 테트로미노를 보드에 추가
+    void CreateGhostTetromino()
+    {
+        if (ghostTetrominoNode != null)
+        {
+            Destroy(ghostTetrominoNode.gameObject);
+        }
+
+        ghostTetrominoNode = new GameObject("GhostTetromino").transform;
+        ghostTetrominoNode.parent = transform;
+
+        foreach (Transform child in tetrominoNode)
+        {
+            var ghostTile = Instantiate(ghostTilePrefab, child.position, child.rotation, ghostTetrominoNode);
+            var tileScript = ghostTile.GetComponent<TileScript>();
+            tileScript.Color = new Color(1, 1, 1, 0.3f); // 반투명 색상
+        }
+        MoveGhostTetrominoToBottom();
+    }
+
+    void UpdateGhostTetromino()
+    {
+        // 고스트 블럭의 자식들만 업데이트
+        for (int i = 0; i < ghostTetrominoNode.childCount; i++)
+        {
+            Transform ghostChild = ghostTetrominoNode.GetChild(i);
+            Transform tetrominoChild = tetrominoNode.GetChild(i);
+
+            ghostChild.position = tetrominoChild.position;
+            ghostChild.rotation = tetrominoChild.rotation;
+        }
+        MoveGhostTetrominoToBottom();
+    }
+
+    void MoveGhostTetrominoToBottom()
+    {
+        while (CanMoveTo(ghostTetrominoNode))
+        {
+            ghostTetrominoNode.position += Vector3.down;
+        }
+        ghostTetrominoNode.position += Vector3.up; // 한 칸 올라가서 최종 위치 설정
+    }
+
     void AddToBoard(Transform root)
     {
         while (root.childCount > 0)
@@ -275,12 +304,10 @@ public class StageScript : MonoBehaviour
         }
     }
 
-    // 보드에 완성된 행이 있으면 삭제
     void CheckBoardColumn()
     {
         bool isCleared = false;
 
-        // 완성된 행 == 행의 자식 갯수가 가로 크기
         foreach (Transform column in boardNode)
         {
             if (column.childCount == boardWidth)
@@ -295,14 +322,12 @@ public class StageScript : MonoBehaviour
             }
         }
 
-        // 아래로 내리기
         if (isCleared)
         {
             for (int i = 1; i < boardNode.childCount; ++i)
             {
                 var column = boardNode.Find(i.ToString());
 
-                // 이미 비어 있는 행은 무시
                 if (column.childCount == 0)
                     continue;
 
