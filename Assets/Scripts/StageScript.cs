@@ -7,10 +7,13 @@ public class StageScript : MonoBehaviour
     [Header("Editor Objects")]
     [SerializeField] private GameObject tilePrefab;
     [SerializeField] private GameObject ghostTilePrefab;
+    [SerializeField] private GameObject previewTilePrefab; // 미리보기 타일 프리팹
 
     [SerializeField] private Transform backgroundNode;
     [SerializeField] private Transform boardNode;
     [SerializeField] private Transform tetrominoNode;
+    [SerializeField] private Transform previewNode; // 미리보기 노드
+
     private Transform ghostTetrominoNode;
 
     [Header("Game Settings")]
@@ -22,6 +25,7 @@ public class StageScript : MonoBehaviour
     public Transform BackgroundNode => backgroundNode;
     public Transform BoardNode => boardNode;
     public Transform TetrominoNode => tetrominoNode;
+    public Transform PreviewNode => previewNode;
 
     public int BoardWidth => boardWidth;
     public int BoardHeight => boardHeight;
@@ -31,6 +35,8 @@ public class StageScript : MonoBehaviour
     private int halfHeight;
 
     private float nextFallTime;
+
+    private int nextTetrominoIndex; // 다음 테트로미노의 인덱스
 
     void Start()
     {
@@ -48,8 +54,10 @@ public class StageScript : MonoBehaviour
             col.transform.parent = boardNode;
         }
 
+        nextTetrominoIndex = Random.Range(0, 7); // 첫 번째 테트로미노 인덱스 설정
         CreateTetromino();
         CreateGhostTetromino();
+        CreatePreviewTetromino();
     }
 
     void Update()
@@ -117,6 +125,7 @@ public class StageScript : MonoBehaviour
                 CheckBoardColumn();
                 CreateTetromino();
                 CreateGhostTetromino();
+                UpdatePreviewTetromino();
             }
 
             return false;
@@ -182,7 +191,7 @@ public class StageScript : MonoBehaviour
 
     void CreateTetromino()
     {
-        int index = Random.Range(0, 7);
+        int index = nextTetrominoIndex;
         Color32 color = Color.white;
 
         tetrominoNode.rotation = Quaternion.identity;
@@ -246,6 +255,8 @@ public class StageScript : MonoBehaviour
                 CreateTile(tetrominoNode, new Vector2(1f, 0f), color);
                 break;
         }
+
+        nextTetrominoIndex = Random.Range(0, 7); // 다음 테트로미노 인덱스를 설정
     }
 
     void CreateGhostTetromino()
@@ -269,7 +280,6 @@ public class StageScript : MonoBehaviour
 
     void UpdateGhostTetromino()
     {
-        // 고스트 블럭의 자식들만 업데이트
         for (int i = 0; i < ghostTetrominoNode.childCount; i++)
         {
             Transform ghostChild = ghostTetrominoNode.GetChild(i);
@@ -288,6 +298,87 @@ public class StageScript : MonoBehaviour
             ghostTetrominoNode.position += Vector3.down;
         }
         ghostTetrominoNode.position += Vector3.up; // 한 칸 올라가서 최종 위치 설정
+    }
+
+    void CreatePreviewTetromino()
+    {
+        if (previewNode == null)
+        {
+            previewNode = new GameObject("PreviewTetromino").transform;
+            previewNode.position = new Vector3(-halfWidth - 4, halfHeight - 2, 0); // 좌측 상단에 위치
+            previewNode.parent = transform;
+        }
+
+        UpdatePreviewTetromino();
+    }
+
+    void UpdatePreviewTetromino()
+    {
+        foreach (Transform child in previewNode)
+        {
+            Destroy(child.gameObject);
+        }
+
+        Color32 color = Color.white;
+
+        switch (nextTetrominoIndex)
+        {
+            case 0:
+                color = new Color32(115, 251, 253, 255);
+                CreateTile(previewNode, new Vector2(-2f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(-1f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(0f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0.0f), color);
+                break;
+
+            case 1:
+                color = new Color32(0, 33, 245, 255);
+                CreateTile(previewNode, new Vector2(-1f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(0f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(-1f, 1.0f), color);
+                break;
+
+            case 2:
+                color = new Color32(243, 168, 59, 255);
+                CreateTile(previewNode, new Vector2(-1f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(0f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0.0f), color);
+                CreateTile(previewNode, new Vector2(1f, 1.0f), color);
+                break;
+
+            case 3:
+                color = new Color32(255, 253, 84, 255);
+                CreateTile(previewNode, new Vector2(0f, 0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0f), color);
+                CreateTile(previewNode, new Vector2(0f, 1f), color);
+                CreateTile(previewNode, new Vector2(1f, 1f), color);
+                break;
+
+            case 4:
+                color = new Color32(117, 250, 76, 255);
+                CreateTile(previewNode, new Vector2(-1f, -1f), color);
+                CreateTile(previewNode, new Vector2(0f, -1f), color);
+                CreateTile(previewNode, new Vector2(0f, 0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0f), color);
+                break;
+
+            case 5:
+                color = new Color32(155, 47, 246, 255);
+                CreateTile(previewNode, new Vector2(-1f, 0f), color);
+                CreateTile(previewNode, new Vector2(0f, 0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0f), color);
+                CreateTile(previewNode, new Vector2(0f, 1f), color);
+                break;
+
+            case 6:
+                color = new Color32(235, 51, 35, 255);
+                CreateTile(previewNode, new Vector2(-1f, 1f), color);
+                CreateTile(previewNode, new Vector2(0f, 1f), color);
+                CreateTile(previewNode, new Vector2(0f, 0f), color);
+                CreateTile(previewNode, new Vector2(1f, 0f), color);
+                break;
+        }
     }
 
     void AddToBoard(Transform root)
